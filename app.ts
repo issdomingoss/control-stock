@@ -1,15 +1,25 @@
 const express = require('express');
 const fs = require('fs');
 
+const logger = require('./logger');
+
 const app = express();
 const port = 3000;
-const defaultRouter = '/api/v1';
+
+const PRODUCT_ROUTE_V1 = '/api/v1/products';
+const PRODUCT_ROUTE_BY_ID_V1 = '/api/v1/products/:id';
+
+const USER_ROUTE_V1 = '/api/v1/users';
+const USER_ROUTE_BY_ID_V1 = '/api/v1/users/:id';
+
+
+// INTERFACES--------------------------------------------------------------------------
 
 interface TimeInfo {
   readonly createdAt: Date | number | string;
   updatedAt: Date | number | string;
   deletedAt: Date | number | string;
-}
+};
 
 interface Product {
   id: number;
@@ -21,7 +31,10 @@ interface Product {
   quantityStock: number;
   lowStockWarning: number;
   timeInfo: TimeInfo
-}
+};
+// ---------------------------------------------------------------------------------------
+
+// MOCKED DATA--------------------------------------------------------------------------
 
 const mockedProducts: Product[] = [
   {
@@ -41,7 +54,7 @@ const mockedProducts: Product[] = [
   },
   {
     id: 2,
-    name: "skol 1l",
+    name: "skol 1L",
     purchasePrice: 4.25,
     tradePrice: 10.00,
     brand: "skol",
@@ -100,24 +113,27 @@ const mockedProducts: Product[] = [
     }
   }
 ];
+// ---------------------------------------------------------------------------------------
 
-//middleware for access a body requests
+// MIDDLEWARE'S--------------------------------------------------------------------------
 app.use(express.json());
+app.use(logger('dev'));
+// ---------------------------------------------------------------------------------------
 
-// GET - return all products registered
-app.get(`${defaultRouter}/products`, (req: any, res: any): void => {
+
+// FUNCTIONS HTTPS------------------------------------------------------------------------
+const getAllProducts = (req: any, res: any): void => {
+
   res.status(200).json({
     status: 'success',
+    size: mockedProducts.length,
     data: {
       products: mockedProducts,
-      size: mockedProducts.length
     }
   });
-});
+};
 
-// GET:id - return a specif product
-app.get(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
-  console.log(req.params);
+const getProductById = (req: any, res: any): void => {
 
   const id = parseInt(req.params.id, 10);
 
@@ -127,7 +143,7 @@ app.get(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
     res.status(404).json({
       status: "not found",
       message: `Product with ID ${id} not found!`
-    })
+    });
   };
 
   res.status(200).json({
@@ -136,10 +152,9 @@ app.get(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
       product: found
     }
   });
-});
+};
 
-// POST - create a product
-app.post(`${defaultRouter}/products`, (req: any, res: any): void => {
+const createProduct = (req: any, res: any): void => {
 
   const newId = mockedProducts.length + 1;
   
@@ -153,10 +168,9 @@ app.post(`${defaultRouter}/products`, (req: any, res: any): void => {
       message: "Product created with success!"
     }
   });
-});
+};
 
-// PATCH:id - update part of object
-app.patch(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
+const updateProductById = (req: any, res: any): void => {
   const id = parseInt(req.params.id, 10);
   const found: Product | undefined = mockedProducts.find(el => el.id === id);
 
@@ -168,8 +182,6 @@ app.patch(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
       }
     })
   };
-
-  console.log(id);
 
   res.status(200).json({
     status: "success",
@@ -177,11 +189,9 @@ app.patch(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
       message: `Product with ID ${id} updated with success!`
     }
   });
-  
-});
+};
 
-// DELETE:id delete product
-app.delete(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
+const deleteProductById = (req: any, res: any): void => {
   const id = parseInt(req.params.id, 10);
   const found: Product | undefined = mockedProducts.find(el => el.id === id);
 
@@ -194,14 +204,122 @@ app.delete(`${defaultRouter}/products/:id`, (req: any, res: any): void => {
     })
   };
 
-  console.log(id);
+  res.status(204).json({
+    status: "success",
+    data: null
+  });
+};
+
+const getAllUsers = (req: any, res: any): void => {
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      users: []
+    }
+  });
+};
+
+const createUser = (req: any, res: any): void => {
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      message: ""
+    }
+  });
+};
+
+const getUserById = (req: any, res: any): void => {
+  const id = parseInt(req.params.id, 10);
+  const found = mockedProducts.find(el => el.id === id);
+
+  if(!found) {
+    res.status(404).json({
+      status: "not found",
+      data: {
+        message: `User with ID ${id} not found!`
+      }
+    })
+  };
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      user: {}
+    }
+  });
+};
+
+const updateUserById = (req: any, res: any): void => {
+  const id = parseInt(req.params.id, 10);
+  const found: Product | undefined = mockedProducts.find(el => el.id === id);
+
+  if(!found) {
+    res.status(404).json({
+      status: "not found",
+      data: {
+        message: `User with ID ${id} not found!`
+      }
+    })
+  };
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      message: ''
+    }
+  });
+};
+
+const deleteUserById = (req: any, res: any): void => {
+  const id = parseInt(req.params.id, 10);
+  const found: Product | undefined = mockedProducts.find(el => el.id === id);
+
+  if(!found) {
+    res.status(404).json({
+      status: "not found",
+      data: {
+        message: `User with ID ${id} not found!`
+      }
+    })
+  };
 
   res.status(204).json({
     status: "success",
     data: null
   });
-  
-});
+};
+
+// ---------------------------------------------------------------------------------------
+
+// ROUTE: PRODUCTS------------------------------------------------------------------------
+app
+  .route(PRODUCT_ROUTE_V1)
+  .get(getAllProducts)
+  .post(createProduct);
+
+app
+  .route(PRODUCT_ROUTE_BY_ID_V1)
+  .get(getProductById)
+  .patch(updateProductById)
+  .delete(deleteProductById);
+
+// ---------------------------------------------------------------------------------------
+
+// ROUTE: USERS--------------------------------------------------------------------------
+app
+  .route(USER_ROUTE_V1)
+  .get(getAllUsers)
+  .post(createUser);
+
+app
+  .route(USER_ROUTE_BY_ID_V1)
+  .get(getUserById)
+  .patch(updateUserById)
+  .delete(deleteUserById);
+
+// ---------------------------------------------------------------------------------------
 
 app.listen(port, (): void => {
   console.log(`App running in port ${port}...`);
